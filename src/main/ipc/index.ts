@@ -8,8 +8,17 @@ import { registerVariants } from './variants'
 import { registerJobs } from './jobs'
 import { registerStats } from './stats'
 import { registerSettings } from './settings'
-export function registerIpc(getWindow: () => BrowserWindow | null, services: Services, refresh: () => void) {
+export function registerIpc(
+  getWindow: () => BrowserWindow | null,
+  services: Services,
+  refresh: (reset?: boolean) => void,
+) {
   const register = registrar(getWindow)
-  registerConcepts(register, services); registerSession(register, services); registerReviews(register, services)
-  registerVariants(register, services); registerJobs(register, services); registerStats(register, services); registerSettings(register, services, refresh)
+  registerConcepts(register, services)
+  registerSession(register, services)
+  registerReviews(register, services)
+  registerVariants(register, services)
+  registerJobs(register, services)
+  registerStats(register, services)
+  registerSettings(register, services, refresh)
 }

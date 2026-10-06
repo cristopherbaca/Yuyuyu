@@ -2,7 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { FsrsService, ratingFromVerdict } from '../src/main/services/fsrs'
 describe('deterministic FSRS', () => {
   const now = new Date('2026-10-05T10:00:00Z')
-  const fsrs = new FsrsService(() => 0.9, () => now)
+  const fsrs = new FsrsService(
+    () => 0.9,
+    () => now,
+  )
   it('maps verdicts and caps hinted passes', () => {
     expect(ratingFromVerdict('fail', 'mcq', 100, false)).toBe(1)
     expect(ratingFromVerdict('partial', 'mcq', 100, false)).toBe(2)

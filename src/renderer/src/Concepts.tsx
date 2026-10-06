@@ -6,34 +6,401 @@ import { ErrorBox, Icon, Markdown, Notice, PageHeader, useResource } from './com
 const labels = { simple: 'Simple', problem: 'Problemas', both: 'Ambas' }
 export function ConceptsPage() {
   const resource = useResource(() => unwrap(window.api.concepts.list()))
-  const [creating, setCreating] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState('')
-  const [title, setTitle] = useState(''); const [note, setNote] = useState(''); const [mode, setMode] = useState<Mode>('both')
+  const [creating, setCreating] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [title, setTitle] = useState('')
+  const [note, setNote] = useState('')
+  const [mode, setMode] = useState<Mode>('both')
   const navigate = useNavigate()
   useEffect(() => window.api.onPoolUpdated(() => resource.reload()), [])
-  async function create(event: FormEvent) { event.preventDefault(); setBusy(true); setError(''); try { const concept = await unwrap(window.api.concepts.create({ title, noteText: note, modePref: mode })); navigate(`/concepts/${concept.id}`) } catch (error) { setError(message(error)) } finally { setBusy(false) } }
-  async function seed() { setBusy(true); setError(''); try { await unwrap(window.api.data.seed()); resource.reload() } catch (error) { setError(message(error)) } finally { setBusy(false) } }
+  async function create(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError('')
+    try {
+      const concept = await unwrap(
+        window.api.concepts.create({ title, noteText: note, modePref: mode }),
+      )
+      navigate(`/concepts/${concept.id}`)
+    } catch (error) {
+      setError(message(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  async function seed() {
+    setBusy(true)
+    setError('')
+    try {
+      await unwrap(window.api.data.seed())
+      resource.reload()
+    } catch (error) {
+      setError(message(error))
+    } finally {
+      setBusy(false)
+    }
+  }
   const all = resource.data ?? []
-  const due = all.filter(c => c.due <= Date.now()).length
-  return <><PageHeader eyebrow="TU BIBLIOTECA" title="Ideas que se quedan." description="Escribe una vez. Descubre una nueva perspectiva en cada repaso." action={<button className="primary" onClick={() => setCreating(!creating)}><Icon name="plus" />{creating ? 'Cerrar formulario' : 'Nuevo concepto'}</button>} /><ErrorBox error={error || resource.error} />
-    {creating && <form className="panel concept-form" onSubmit={create}><div className="section-title"><h2>Un concepto, muchas maneras de aprender.</h2><span className="badge">Markdown + LaTeX</span></div><label>Título<input value={title} maxLength={200} onChange={e => setTitle(e.target.value)} placeholder="Por ejemplo: Teorema de Pitágoras" required /></label><div className="split"><label>Tu nota<textarea value={note} onChange={e => setNote(e.target.value)} rows={8} maxLength={40000} placeholder="Incluye los hechos, las fórmulas y los ejemplos que quieres aprender. Las variantes usarán solo esta nota." required /></label><div><span className="field-label">Vista previa</span><div className="preview"><Markdown text={note || '*Tu nota aparecerá aquí.*'} /></div></div></div><label>Tipo de práctica<select value={mode} onChange={e => setMode(e.target.value as Mode)}><option value="simple">Simple · recordar y completar</option><option value="problem">Problemas · aplicar conceptos</option><option value="both">Ambas · variedad completa</option></select></label><button className="primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar concepto'}</button></form>}
-    <div className="summary-strip"><span><strong>{all.length}</strong> conceptos</span><span><i className="dot amber" /><strong>{due}</strong> para repasar</span><span><i className="dot" /><strong>{all.reduce((n, c) => n + c.poolSize, 0)}</strong> variantes listas</span><span className="muted">Tu conocimiento, en tu dispositivo.</span></div>
-    {resource.loading && !resource.data ? <Notice>Cargando tus conceptos…</Notice> : !all.length ? <div className="empty panel"><div className="empty-icon"><Icon name="cards" /></div><h2>Todo empieza con una idea.</h2><p>Añade tu primera nota o explora tres conceptos de ejemplo.<br />Los repasos funcionan incluso sin conexión.</p><button className="primary" onClick={() => setCreating(true)}>Crear mi primer concepto</button><button className="text-button" onClick={() => void seed()} disabled={busy}>Cargar datos de ejemplo <span>↗</span></button></div> : <div className="concept-grid">{all.map(c => <Link className="concept-card" to={`/concepts/${c.id}`} key={c.id}><div className="card-top"><span className="badge">{labels[c.modePref]}</span><span className={`due-badge ${c.due <= Date.now() ? 'is-due' : ''}`}>{c.lastReview === null ? 'Nuevo' : c.due <= Date.now() ? 'Para hoy' : 'Programado'}</span></div><h2>{c.title}</h2><p className="note-excerpt">{c.noteText.replace(/[#*$]/g, '').slice(0, 150)}</p><div className="card-footer"><span>{c.poolSize} variantes listas</span><span>{Math.round(c.retrievability * 100)}% recuerdo</span><Icon name="arrow" /></div></Link>)}</div>}
-  </>
+  const due = all.filter((c) => c.due <= Date.now()).length
+  return (
+    <>
+      <PageHeader
+        eyebrow="TU BIBLIOTECA"
+        title="Ideas que se quedan."
+        description="Escribe una vez. Descubre una nueva perspectiva en cada repaso."
+        action={
+          <button className="primary" onClick={() => setCreating(!creating)}>
+            <Icon name="plus" />
+            {creating ? 'Cerrar formulario' : 'Nuevo concepto'}
+          </button>
+        }
+      />
+      <ErrorBox error={error || resource.error} />
+      {creating && (
+        <form className="panel concept-form" onSubmit={create}>
+          <div className="section-title">
+            <h2>Un concepto, muchas maneras de aprender.</h2>
+            <span className="badge">Markdown + LaTeX</span>
+          </div>
+          <label>
+            Título
+            <input
+              value={title}
+              maxLength={200}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Por ejemplo: Teorema de Pitágoras"
+              required
+            />
+          </label>
+          <div className="split">
+            <label>
+              Tu nota
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={8}
+                maxLength={40000}
+                placeholder="Incluye los hechos, las fórmulas y los ejemplos que quieres aprender. Las variantes usarán solo esta nota."
+                required
+              />
+            </label>
+            <div>
+              <span className="field-label">Vista previa</span>
+              <div className="preview">
+                <Markdown text={note || '*Tu nota aparecerá aquí.*'} />
+              </div>
+            </div>
+          </div>
+          <label>
+            Tipo de práctica
+            <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+              <option value="simple">Simple · recordar y completar</option>
+              <option value="problem">Problemas · aplicar conceptos</option>
+              <option value="both">Ambas · variedad completa</option>
+            </select>
+          </label>
+          <button className="primary" disabled={busy}>
+            {busy ? 'Guardando…' : 'Guardar concepto'}
+          </button>
+        </form>
+      )}
+      <div className="summary-strip">
+        <span>
+          <strong>{all.length}</strong> conceptos
+        </span>
+        <span>
+          <i className="dot amber" />
+          <strong>{due}</strong> para repasar
+        </span>
+        <span>
+          <i className="dot" />
+          <strong>{all.reduce((n, c) => n + c.poolSize, 0)}</strong> variantes listas
+        </span>
+        <span className="muted">Tu conocimiento, en tu dispositivo.</span>
+      </div>
+      {resource.loading && !resource.data ? (
+        <Notice>Cargando tus conceptos…</Notice>
+      ) : !all.length ? (
+        <div className="empty panel">
+          <div className="empty-icon">
+            <Icon name="cards" />
+          </div>
+          <h2>Todo empieza con una idea.</h2>
+          <p>
+            Añade tu primera nota o explora tres conceptos de ejemplo.
+            <br />
+            Los repasos funcionan incluso sin conexión.
+          </p>
+          <button className="primary" onClick={() => setCreating(true)}>
+            Crear mi primer concepto
+          </button>
+          <button className="text-button" onClick={() => void seed()} disabled={busy}>
+            Cargar datos de ejemplo <span>↗</span>
+          </button>
+        </div>
+      ) : (
+        <div className="concept-grid">
+          {all.map((c) => (
+            <Link className="concept-card" to={`/concepts/${c.id}`} key={c.id}>
+              <div className="card-top">
+                <span className="badge">{labels[c.modePref]}</span>
+                <span className={`due-badge ${c.due <= Date.now() ? 'is-due' : ''}`}>
+                  {c.lastReview === null
+                    ? 'Nuevo'
+                    : c.due <= Date.now()
+                      ? 'Para hoy'
+                      : 'Programado'}
+                </span>
+              </div>
+              <h2>{c.title}</h2>
+              <p className="note-excerpt">{c.noteText.replace(/[#*$]/g, '').slice(0, 150)}</p>
+              <div className="card-footer">
+                <span>{c.poolSize} variantes listas</span>
+                <span>{Math.round(c.retrievability * 100)}% recuerdo</span>
+                <Icon name="arrow" />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </>
+  )
 }
 export function ConceptDetailPage() {
-  const { id = '' } = useParams(); const navigate = useNavigate()
+  const { id = '' } = useParams()
+  const navigate = useNavigate()
   const resource = useResource(() => unwrap(window.api.concepts.get(id)), [id])
   const concepts = useResource(() => unwrap(window.api.concepts.list()))
-  const [edit, setEdit] = useState(false); const [note, setNote] = useState(''); const [mode, setMode] = useState<Mode>('both'); const [error, setError] = useState(''); const [busy, setBusy] = useState(false); const [confirmDelete, setConfirmDelete] = useState(false)
-  useEffect(() => window.api.onPoolUpdated(changed => { if (changed === id) resource.reload() }), [id])
-  async function run(action: () => Promise<unknown>) { setBusy(true); setError(''); try { await action(); resource.reload() } catch (error) { setError(message(error)) } finally { setBusy(false) } }
-  if (!resource.data) return <><ErrorBox error={resource.error} /><Notice>{resource.loading ? 'Cargando concepto…' : 'No se encontró el concepto.'}</Notice></>
+  const [edit, setEdit] = useState(false)
+  const [note, setNote] = useState('')
+  const [mode, setMode] = useState<Mode>('both')
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  useEffect(
+    () =>
+      window.api.onPoolUpdated((changed) => {
+        if (changed === id) resource.reload()
+      }),
+    [id],
+  )
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true)
+    setError('')
+    try {
+      await action()
+      resource.reload()
+    } catch (error) {
+      setError(message(error))
+    } finally {
+      setBusy(false)
+    }
+  }
+  if (!resource.data)
+    return (
+      <>
+        <ErrorBox error={resource.error} />
+        <Notice>{resource.loading ? 'Cargando concepto…' : 'No se encontró el concepto.'}</Notice>
+      </>
+    )
   const { concept: c, edges, reviews, pool } = resource.data
-  const name = (conceptId: string) => concepts.data?.find(c => c.id === conceptId)?.title ?? 'Concepto'
-  return <><Link className="back-link" to="/concepts">← Todos los conceptos</Link><PageHeader eyebrow={labels[c.modePref].toUpperCase()} title={c.title} action={<button onClick={() => { setEdit(!edit); setNote(c.noteText); setMode(c.modePref) }}>{edit ? 'Cancelar' : 'Editar nota'}</button>} /><ErrorBox error={error || resource.error} />
-    <div className="detail-metrics"><div className="panel"><span>Próximo repaso</span><strong>{c.lastReview ? date(c.due) : 'Listo para empezar'}</strong></div><div className="panel"><span>Recuerdo estimado</span><strong>{Math.round(c.retrievability * 100)}%</strong></div><div className="panel"><span>Banco verificado</span><strong>{pool.verified} variantes listas</strong></div></div>
-    <div className="detail-columns"><section className="panel"><div className="section-title"><h2>La nota original</h2><span className="badge">Fuente de verdad</span></div>{edit ? <form onSubmit={e => { e.preventDefault(); void run(async () => { await unwrap(window.api.concepts.update(id, { noteText: note, modePref: mode })); setEdit(false) }) }}><label>Nota Markdown<textarea rows={14} value={note} onChange={e => setNote(e.target.value)} maxLength={40000} required /></label><label>Práctica<select value={mode} onChange={e => setMode(e.target.value as Mode)}>{Object.entries(labels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><Notice>Al guardar, las variantes anteriores se retiran y se genera un banco nuevo.</Notice><button className="primary" disabled={busy}>Guardar cambios</button></form> : <Markdown text={c.noteText} />}</section><aside><section className="panel"><div className="section-title"><h2>Conexiones</h2><Icon name="cards" /></div>{edges.length ? edges.map(edge => <div className="edge" key={edge.id}><strong>{name(edge.fromId)} → {name(edge.toId)}</strong><span className="muted">{edge.relation === 'prerequisite_of' ? 'Prerrequisito' : edge.relation === 'application_of' ? 'Aplicación' : 'Relacionado'} · {edge.status === 'confirmed' ? 'Confirmada' : edge.status === 'rejected' ? 'Rechazada' : 'Sugerida'}</span><p>{edge.rationale}</p>{edge.status === 'suggested' && <div className="button-row"><button disabled={busy} onClick={() => void run(() => unwrap(window.api.edges.confirm(edge.id)))}>Confirmar</button><button className="text-button" disabled={busy} onClick={() => void run(() => unwrap(window.api.edges.reject(edge.id)))}>Rechazar</button></div>}</div>) : <p className="muted">Las conexiones sugeridas aparecerán aquí. Solo las confirmadas generan refuerzos.</p>}</section><section className="panel"><h2>Tu banco de variantes</h2><p>{pool.verified} verificadas · {pool.rejected} rechazadas · {pool.retired} retiradas</p><button disabled={busy} onClick={() => void run(() => unwrap(window.api.concepts.generate(id, 5)))}><Icon name="spark" /> Generar 5 variantes</button>{c.nextAngleHint && <Notice>Próximo enfoque: {c.nextAngleHint}</Notice>}</section></aside></div>
-    <section className="panel"><h2>Repasos recientes</h2>{reviews.length ? reviews.map(r => <div className="review-history" key={r.id}><span className={`verdict ${r.verdict}`}>{r.verdict === 'pass' ? 'Bien' : r.verdict === 'partial' ? 'Parcial' : 'Otra vez'}</span><div><strong>{date(r.reviewedAt)}</strong><p>{r.errorSummary ?? r.graderReasoning}{r.userOverrideVerdict ? ' · Valoración corregida' : ''}</p></div><span className="badge">FSRS {r.rating}</span></div>) : <p className="muted">Todavía no has repasado este concepto.</p>}</section>
-    <div className="delete-row">{confirmDelete ? <><span>¿Eliminar este concepto y su historial?</span><button className="danger" disabled={busy} onClick={() => void run(async () => { await unwrap(window.api.concepts.delete(id)); navigate('/concepts') })}>Sí, eliminar</button><button onClick={() => setConfirmDelete(false)}>Cancelar</button></> : <button className="text-button danger-text" onClick={() => setConfirmDelete(true)}>Eliminar concepto</button>}</div>
-  </>
+  const name = (conceptId: string) =>
+    concepts.data?.find((c) => c.id === conceptId)?.title ?? 'Concepto'
+  return (
+    <>
+      <Link className="back-link" to="/concepts">
+        ← Todos los conceptos
+      </Link>
+      <PageHeader
+        eyebrow={labels[c.modePref].toUpperCase()}
+        title={c.title}
+        action={
+          <button
+            onClick={() => {
+              setEdit(!edit)
+              setNote(c.noteText)
+              setMode(c.modePref)
+            }}
+          >
+            {edit ? 'Cancelar' : 'Editar nota'}
+          </button>
+        }
+      />
+      <ErrorBox error={error || resource.error} />
+      <div className="detail-metrics">
+        <div className="panel">
+          <span>Próximo repaso</span>
+          <strong>{c.lastReview ? date(c.due) : 'Listo para empezar'}</strong>
+        </div>
+        <div className="panel">
+          <span>Recuerdo estimado</span>
+          <strong>{Math.round(c.retrievability * 100)}%</strong>
+        </div>
+        <div className="panel">
+          <span>Banco verificado</span>
+          <strong>{pool.verified} variantes listas</strong>
+        </div>
+      </div>
+      <div className="detail-columns">
+        <section className="panel">
+          <div className="section-title">
+            <h2>La nota original</h2>
+            <span className="badge">Fuente de verdad</span>
+          </div>
+          {edit ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                void run(async () => {
+                  await unwrap(window.api.concepts.update(id, { noteText: note, modePref: mode }))
+                  setEdit(false)
+                })
+              }}
+            >
+              <label>
+                Nota Markdown
+                <textarea
+                  rows={14}
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  maxLength={40000}
+                  required
+                />
+              </label>
+              <label>
+                Práctica
+                <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
+                  {Object.entries(labels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <Notice>
+                Al guardar, las variantes anteriores se retiran y se genera un banco nuevo.
+              </Notice>
+              <button className="primary" disabled={busy}>
+                Guardar cambios
+              </button>
+            </form>
+          ) : (
+            <Markdown text={c.noteText} />
+          )}
+        </section>
+        <aside>
+          <section className="panel">
+            <div className="section-title">
+              <h2>Conexiones</h2>
+              <Icon name="cards" />
+            </div>
+            {edges.length ? (
+              edges.map((edge) => (
+                <div className="edge" key={edge.id}>
+                  <strong>
+                    {name(edge.fromId)} → {name(edge.toId)}
+                  </strong>
+                  <span className="muted">
+                    {edge.relation === 'prerequisite_of'
+                      ? 'Prerrequisito'
+                      : edge.relation === 'application_of'
+                        ? 'Aplicación'
+                        : 'Relacionado'}{' '}
+                    ·{' '}
+                    {edge.status === 'confirmed'
+                      ? 'Confirmada'
+                      : edge.status === 'rejected'
+                        ? 'Rechazada'
+                        : 'Sugerida'}
+                  </span>
+                  <p>{edge.rationale}</p>
+                  {edge.status === 'suggested' && (
+                    <div className="button-row">
+                      <button
+                        disabled={busy}
+                        onClick={() => void run(() => unwrap(window.api.edges.confirm(edge.id)))}
+                      >
+                        Confirmar
+                      </button>
+                      <button
+                        className="text-button"
+                        disabled={busy}
+                        onClick={() => void run(() => unwrap(window.api.edges.reject(edge.id)))}
+                      >
+                        Rechazar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <p className="muted">
+                Las conexiones sugeridas aparecerán aquí. Solo las confirmadas generan refuerzos.
+              </p>
+            )}
+          </section>
+          <section className="panel">
+            <h2>Tu banco de variantes</h2>
+            <p>
+              {pool.verified} verificadas · {pool.rejected} rechazadas · {pool.retired} retiradas
+            </p>
+            <button
+              disabled={busy}
+              onClick={() => void run(() => unwrap(window.api.concepts.generate(id, 5)))}
+            >
+              <Icon name="spark" /> Generar 5 variantes
+            </button>
+            {c.nextAngleHint && <Notice>Próximo enfoque: {c.nextAngleHint}</Notice>}
+          </section>
+        </aside>
+      </div>
+      <section className="panel">
+        <h2>Repasos recientes</h2>
+        {reviews.length ? (
+          reviews.map((r) => (
+            <div className="review-history" key={r.id}>
+              <span className={`verdict ${r.verdict}`}>
+                {r.verdict === 'pass' ? 'Bien' : r.verdict === 'partial' ? 'Parcial' : 'Otra vez'}
+              </span>
+              <div>
+                <strong>{date(r.reviewedAt)}</strong>
+                <p>
+                  {r.errorSummary ?? r.graderReasoning}
+                  {r.userOverrideVerdict ? ' · Valoración corregida' : ''}
+                </p>
+              </div>
+              <span className="badge">FSRS {r.rating}</span>
+            </div>
+          ))
+        ) : (
+          <p className="muted">Todavía no has repasado este concepto.</p>
+        )}
+      </section>
+      <div className="delete-row">
+        {confirmDelete ? (
+          <>
+            <span>¿Eliminar este concepto y su historial?</span>
+            <button
+              className="danger"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await unwrap(window.api.concepts.delete(id))
+                  navigate('/concepts')
+                })
+              }
+            >
+              Sí, eliminar
+            </button>
+            <button onClick={() => setConfirmDelete(false)}>Cancelar</button>
+          </>
+        ) : (
+          <button className="text-button danger-text" onClick={() => setConfirmDelete(true)}>
+            Eliminar concepto
+          </button>
+        )}
+      </div>
+    </>
+  )
 }

@@ -12,16 +12,17 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && electron-vite build",
-    "dist": "npm run build && electron-builder",
-    "rebuild": "electron-builder install-app-deps",
-    "postinstall": "electron-builder install-app-deps",
-    "test:electron": "node scripts/smoke.mjs"
+    "dist": "npm run build && node scripts/dist.ts",
+    "rebuild": "node scripts/rebuild.ts",
+    "postinstall": "npm run rebuild",
+    "test:electron": "node scripts/smoke.ts",
+    "format": "prettier --write src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
+    "format:check": "prettier --check src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
     "dotenv": "^18.0.5",
     "drizzle-orm": "^0.45.3",
-    "electron-vite": "^5.0.0",
     "fastest-levenshtein": "^1.0.16",
     "katex": "^0.19.0",
     "mathjs": "^15.2.0",
@@ -35,6 +36,7 @@
     "rehype-sanitize": "^6.0.0",
     "remark-math": "^6.0.0",
     "ts-fsrs": "^5.4.2",
+    "undici": "^8.11.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
@@ -46,8 +48,15 @@
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^44.5.1",
     "electron-builder": "^26.15.3",
+    "electron-vite": "^5.0.0",
+    "playwright": "^1.63.0",
+    "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3",
     "typescript": "^7.0.2",
     "vitest": "^5.0.3"
-  }
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "desktopName": "dynamic-flashcards.desktop"
 }

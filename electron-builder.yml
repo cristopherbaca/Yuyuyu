@@ -12,9 +12,12 @@ linux:
     - AppImage
     - deb
   category: Education
+  maintainer: Dynamic Flashcards Contributors
+  syncDesktopName: true
 mac:
   target: dmg
   identity: null
 win:
   target: nsis
 npmRebuild: true
+beforeBuild: scripts/native.cjs

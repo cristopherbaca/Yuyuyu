@@ -9,7 +9,11 @@ export function createDatabase(path = ':memory:') {
   sqlite.pragma('busy_timeout = 5000')
   sqlite.exec('CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)')
   const applied = sqlite.prepare('SELECT version FROM schema_migrations WHERE version = 1').get()
-  if (!applied) sqlite.transaction(() => { sqlite.exec(initialMigration); sqlite.prepare('INSERT INTO schema_migrations VALUES (1)').run() })()
+  if (!applied)
+    sqlite.transaction(() => {
+      sqlite.exec(initialMigration)
+      sqlite.prepare('INSERT INTO schema_migrations VALUES (1)').run()
+    })()
   return { db: drizzle(sqlite, { schema }), close: () => sqlite.close() }
 }
 export type Db = ReturnType<typeof createDatabase>['db']
