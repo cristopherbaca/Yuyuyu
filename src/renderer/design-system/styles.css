@@ -358,7 +358,9 @@ kbd {
 }
 .deck-table-head {
   display: grid;
-  grid-template-columns: minmax(var(--deck-name-min-width), 1fr) repeat(3, var(--deck-count-width)) var(--deck-actions-width);
+  grid-template-columns:
+    minmax(var(--deck-name-min-width), 1fr) repeat(3, var(--deck-count-width))
+    var(--deck-actions-width);
   align-items: center;
   height: var(--space-12);
   font-size: var(--font-xs);
@@ -370,7 +372,9 @@ kbd {
 }
 .deck-row {
   display: grid;
-  grid-template-columns: minmax(var(--deck-name-min-width), 1fr) var(--deck-counts-width) var(--deck-actions-width);
+  grid-template-columns: minmax(var(--deck-name-min-width), 1fr) var(--deck-counts-width) var(
+      --deck-actions-width
+    );
   align-items: center;
   min-height: var(--row-height);
   padding: 0 var(--space-4);
@@ -1606,10 +1610,14 @@ td {
     padding: var(--space-8) var(--space-6);
   }
   .deck-table-head {
-    grid-template-columns: minmax(var(--deck-name-width-medium), 1fr) repeat(3, var(--deck-count-width-medium)) var(--deck-actions-width-medium);
+    grid-template-columns:
+      minmax(var(--deck-name-width-medium), 1fr) repeat(3, var(--deck-count-width-medium))
+      var(--deck-actions-width-medium);
   }
   .deck-row {
-    grid-template-columns: minmax(var(--deck-name-width-medium), 1fr) var(--deck-counts-width-medium) var(--deck-actions-width-medium);
+    grid-template-columns:
+      minmax(var(--deck-name-width-medium), 1fr) var(--deck-counts-width-medium)
+      var(--deck-actions-width-medium);
     padding: 0 var(--space-2);
   }
   .deck-row .hover-study .icon {
@@ -1647,7 +1655,9 @@ td {
     grid-template-columns: minmax(var(--menu-width), 1fr) var(--deck-filter-width) var(--space-8);
   }
   .deck-table-head {
-    grid-template-columns: minmax(var(--menu-width), 1fr) repeat(3, var(--deck-count-width-compact)) var(--space-8);
+    grid-template-columns:
+      minmax(var(--menu-width), 1fr) repeat(3, var(--deck-count-width-compact))
+      var(--space-8);
     padding: 0 var(--space-2);
   }
   .hover-study {
@@ -1685,6 +1695,26 @@ td {
   }
 }
 /* Dialog defaults are reset by Tailwind; explicitly retain centered modal geometry. */
-.modal { margin:auto; }
-.modal.sheet { margin:0 0 0 auto; }
-.filter-strip { margin-bottom:var(--space-5); }
+.modal {
+  margin: auto;
+}
+.modal.sheet {
+  margin: 0 0 0 auto;
+}
+.filter-strip {
+  margin-bottom: var(--space-5);
+}
+
+.reviewer-top {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+}
+.reviewer-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-3);
+}
+.reviewer-top .chip {
+  font-size: var(--font-xs);
+}

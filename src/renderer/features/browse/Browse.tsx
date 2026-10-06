@@ -92,17 +92,19 @@ export function BrowsePage() {
           ))}
         </select>
       </div>
-      <div className="filter-strip"><SegmentedControl<string>
-        label="Filtrar tarjetas"
-        value={filter}
-        onChange={setFilter}
-        options={[
-          { value: 'all', label: 'Todas' },
-          { value: 'due', label: 'Vencen hoy' },
-          { value: 'new', label: 'Nuevas' },
-          { value: 'weak', label: 'Débiles' },
-        ]}
-      /></div>
+      <div className="filter-strip">
+        <SegmentedControl<string>
+          label="Filtrar tarjetas"
+          value={filter}
+          onChange={setFilter}
+          options={[
+            { value: 'all', label: 'Todas' },
+            { value: 'due', label: 'Vencen hoy' },
+            { value: 'new', label: 'Nuevas' },
+            { value: 'weak', label: 'Débiles' },
+          ]}
+        />
+      </div>
       {rows.length ? (
         <div className="table-wrap">
           <table className="card-table">

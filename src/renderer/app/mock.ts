@@ -3,8 +3,7 @@ import { createLocalClient, recallCard } from './client'
 import type { Connection, FlashcardClient, StudyCard, VariantType } from './types'
 // This module is imported only behind import.meta.env.DEV. No fixtures ship in production.
 export function installMock(params: URLSearchParams): FlashcardClient {
-  const store = createDemoStore({ getItem: () => null, setItem: () => {} }),
-    now = Date.now(),
+  const now = Date.now(),
     decks = ['Matemáticas', 'Biología', 'Español', 'Historia'].map((name) => ({
       id: crypto.randomUUID(),
       name,
@@ -46,8 +45,18 @@ export function installMock(params: URLSearchParams): FlashcardClient {
   const fixtures: DemoData = { version: 2, decks, concepts, reviews }
   if (params.get('state') === 'empty')
     ((fixtures.decks = []), (fixtures.concepts = []), (fixtures.reviews = []))
-  store.replaceFixtures(fixtures)
-  const requested = params.get('variant') as VariantType | null
+  const store = createDemoStore({ getItem: () => JSON.stringify(fixtures), setItem: () => {} })
+  const typeParam = params.get('variant')
+  const requested = [
+    'recall',
+    'cloze',
+    'mcq',
+    'numeric_problem',
+    'open_problem',
+    'explain',
+  ].includes(typeParam ?? '')
+    ? (typeParam as VariantType)
+    : null
   const reports = new Map<string, number>(),
     connections: Connection[] = [
       {
@@ -131,11 +140,13 @@ export function installMock(params: URLSearchParams): FlashcardClient {
     ...store,
     mode: 'mock',
     status:
-      params.get('state') === 'offline'
-        ? 'offline'
-        : params.get('state') === 'no-key'
-          ? 'no-key'
-          : 'idle',
+      params.get('state') === 'generating'
+        ? 'generating'
+        : params.get('state') === 'offline'
+          ? 'offline'
+          : params.get('state') === 'no-key'
+            ? 'no-key'
+            : 'idle',
     buildSession(deckId, effort, minutes) {
       const allowed =
         effort === 'quick'
@@ -145,12 +156,10 @@ export function installMock(params: URLSearchParams): FlashcardClient {
             : ['recall', 'cloze', 'mcq', 'numeric_problem', 'open_problem', 'explain']
       return store
         .getSnapshot()
-        .concepts.filter(
-          (c) =>
-            c.deckId === deckId && (reports.get(`mock-${requested ?? 'recall'}-${c.id}`) ?? 0) < 2,
-        )
+        .concepts.filter((c) => c.deckId === deckId)
         .slice(0, minutes === null ? undefined : Math.max(1, Math.floor((minutes * 60) / 30)))
         .map((card, i) => variant(card, requested ?? (allowed[i % allowed.length] as VariantType)))
+        .filter((item) => (reports.get(item.variantId!) ?? 0) < 2)
     },
     async grade(item, answer, signal) {
       if (item.answerType === 'open')

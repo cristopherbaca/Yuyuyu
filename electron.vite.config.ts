@@ -1,3 +1,4 @@
+import { APP_NAME } from './src/shared/app'
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { randomBytes } from 'node:crypto'
 import react from '@vitejs/plugin-react'
@@ -22,6 +23,7 @@ export default defineConfig({
           order: 'pre',
           handler: (html, context) =>
             html
+              .replace('__APP_NAME__', APP_NAME)
               .replace('__SCRIPT_POLICY__', context.server ? ` 'nonce-${nonce}'` : '')
               .replace(
                 '__CONNECT_POLICY__',

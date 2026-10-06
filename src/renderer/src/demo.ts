@@ -106,7 +106,12 @@ export function createDemoStore(
           concepts: legacy.data.concepts.map((c) => ({ ...c, deckId: deck.id })),
           reviews: legacy.data.reviews,
         })
-        storage?.setItem(DEMO_KEY, JSON.stringify(data))
+        try {
+          storage?.setItem(DEMO_KEY, JSON.stringify(data))
+        } catch {
+          warning =
+            'Las tarjetas se han conservado, pero no se pudo guardar la migración. Exporta tus datos antes de cerrar.'
+        }
       } else data = dataSchema.parse(parsed)
       if (data.concepts.some((c) => !data.decks.some((d) => d.id === c.deckId)))
         throw new Error('Missing deck')
@@ -214,9 +219,6 @@ export function createDemoStore(
         ),
       })
       return review
-    },
-    replaceFixtures(fixtures: DemoData) {
-      commit(dataSchema.parse(fixtures))
     },
     export: () => JSON.stringify(data, null, 2),
   }

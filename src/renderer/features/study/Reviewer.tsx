@@ -142,7 +142,7 @@ export function Reviewer() {
       client.review(item.card.id, value, seconds, diagnosis)
       setCompleted((done) => [
         ...done,
-        { rating: value, title: item.card.title, diagnosis, seconds },
+        { rating: value, title: current?.title ?? item.card.title, diagnosis, seconds },
       ])
       if (feedback?.reinforcement && (value === 1 || value === 2)) {
         const reinforcement = feedback.reinforcement
@@ -174,6 +174,7 @@ export function Reviewer() {
   }
   useEffect(() => {
     function key(event: KeyboardEvent) {
+      if (document.querySelector('dialog[open]')) return
       if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) {
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !revealed) {
           event.preventDefault()
@@ -181,10 +182,10 @@ export function Reviewer() {
         }
         return
       }
-      if (document.querySelector('dialog[open]')) return
       if (event.key === 'Escape') {
         event.preventDefault()
-        setExit(true)
+        if (item) setExit(true)
+        else navigate(`/decks/${deckId}`)
         return
       }
       if (isEditable(event.target)) {
@@ -318,7 +319,20 @@ export function Reviewer() {
         <span>
           {index + 1} / {items.length}
         </span>
-        <IconButton name="close" label="Salir del repaso" onClick={() => setExit(true)} />
+        <div className="reviewer-top-actions">
+          <Chip>
+            {client.status === 'offline'
+              ? 'Sin conexión'
+              : client.status === 'no-key'
+                ? 'Falta la API key'
+                : client.status === 'generating'
+                  ? 'Generando…'
+                  : client.mode === 'mock'
+                    ? 'Vista de diseño'
+                    : 'Modo local'}
+          </Chip>
+          <IconButton name="close" label="Salir del repaso" onClick={() => setExit(true)} />
+        </div>
       </div>
       <div className="reviewer-content">
         <div className="review-metadata">
@@ -329,7 +343,9 @@ export function Reviewer() {
         </div>
         <article className={`study-card ${revealed ? 'is-revealed' : ''}`}>
           <div className="card-question">
-            <Markdown text={item.question} />
+            <Markdown
+              text={item.variantId === null ? (current?.title ?? item.question) : item.question}
+            />
           </div>
           {!revealed && item.answerType !== 'self' && (
             <div className="review-input">

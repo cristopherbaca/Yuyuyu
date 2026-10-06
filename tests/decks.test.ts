@@ -10,6 +10,22 @@ function storage() {
   }
 }
 describe('decks', () => {
+  it('keeps valid legacy notes readable when saving migration fails', () => {
+    const id = crypto.randomUUID(),
+      raw = JSON.stringify({
+        version: 1,
+        concepts: [{ id, title: 'Old', noteText: 'Note', modePref: 'both', createdAt: 1 }],
+        reviews: [],
+      })
+    const store = createDemoStore({
+      getItem: () => raw,
+      setItem: () => {
+        throw new Error('Quota')
+      },
+    })
+    expect(store.getSnapshot().concepts[0].title).toBe('Old')
+    expect(store.getWarning()).toMatch(/conservado/)
+  })
   it('migrates existing v1 cards and reviews into General without data loss', () => {
     const mem = storage(),
       id = crypto.randomUUID()
@@ -41,20 +57,28 @@ describe('decks', () => {
     expect(store.getSnapshot().reviews).toHaveLength(0)
   })
   it('counts review cards only when due, and learning/relearning only when eligible', () => {
-    const store = createDemoStore(storage()),
+    const mem = storage(),
+      store = createDemoStore(mem),
       deck = store.createDeck('A')
     const card = store.create({ title: 'C', noteText: 'N', modePref: 'both', deckId: deck.id })
     const data = store.getSnapshot()
-    store.replaceFixtures({
-      ...data,
-      concepts: [
-        { ...card, state: 2, due: 10 },
-        { ...card, id: crypto.randomUUID(), state: 3, due: 30 },
-        { ...card, id: crypto.randomUUID(), state: 1, due: 5 },
-        { ...card, id: crypto.randomUUID(), state: 0, due: null },
-      ],
+    mem.setItem(
+      DEMO_KEY,
+      JSON.stringify({
+        ...data,
+        concepts: [
+          { ...card, state: 2, due: 10 },
+          { ...card, id: crypto.randomUUID(), state: 3, due: 30 },
+          { ...card, id: crypto.randomUUID(), state: 1, due: 5 },
+          { ...card, id: crypto.randomUUID(), state: 0, due: null },
+        ],
+      }),
+    )
+    expect(deckCounts(createDemoStore(mem).getSnapshot(), deck.id, 20)).toEqual({
+      new: 1,
+      learning: 1,
+      due: 1,
     })
-    expect(deckCounts(store.getSnapshot(), deck.id, 20)).toEqual({ new: 1, learning: 1, due: 1 })
   })
   it('rejects invalid decks and leaves data unchanged', () => {
     const store = createDemoStore(storage())

@@ -14,5 +14,12 @@
     "types": ["node", "vite/client"],
     "allowImportingTsExtensions": true
   },
-  "include": ["src", "tests", "electron.vite.config.ts", "vitest.config.ts", "scripts/**/*.ts"]
+  "include": [
+    "src",
+    "tests",
+    "electron.vite.config.ts",
+    "vitest.config.ts",
+    "scripts/**/*.ts",
+    "vite.browser.config.ts"
+  ]
 }

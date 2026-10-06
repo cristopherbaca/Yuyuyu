@@ -1,3 +1,4 @@
+import { APP_NAME } from './src/shared/app'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwind from '@tailwindcss/vite'
@@ -11,6 +12,7 @@ export default defineConfig({
       name: 'browser-csp',
       transformIndexHtml(html) {
         return html
+          .replace('__APP_NAME__', APP_NAME)
           .replace('__SCRIPT_POLICY__', " 'unsafe-inline'")
           .replace('__CONNECT_POLICY__', ' ws://localhost:* ws://127.0.0.1:*')
       },
