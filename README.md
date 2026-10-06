@@ -1,4 +1,4 @@
-# Mnemo
+# Facet
 
 An Electron flashcard interface organized around **Mazos → Estudiar → Mostrar respuesta → Otra vez / Difícil / Bien / Fácil**, with Spanish UI, local Markdown/LaTeX notes and Light/Dark/System appearance.
 
@@ -70,7 +70,7 @@ npm run dist
 - `src/renderer/features/{decks,study,add,browse,stats,settings}`: flashcard workflows.
 - `src/renderer/src/demo.ts`: deck-aware local store, v1 migration and self-rating history.
 - `src/main/app`, `src/main/ipc`, `src/preload`: secure desktop lifecycle and narrowly scoped desktop capabilities.
-- `src/shared/app.ts`: one `APP_NAME` constant, currently Mnemo.
+- `src/shared/app.ts`: one `APP_NAME` constant, currently Facet.
 
 The renderer uses isolation, no Node integration, sandboxing, strict production CSP and sanitized Markdown with local fonts/KaTeX/icons. Popups and app navigation are blocked. Native external opening accepts only HTTPS. IPC checks payloads and sender frames. API credentials are neither accepted nor stored in this version.
 

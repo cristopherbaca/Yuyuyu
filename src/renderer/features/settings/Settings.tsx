@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { APP_NAME } from '../../../shared/app'
 import { getClient } from '../../app/client'
 import { useUI } from '../../app/ui'
 import { useTheme } from '../../src/theme'
@@ -30,7 +31,7 @@ export function SettingsPage() {
           url = URL.createObjectURL(blob),
           link = document.createElement('a')
         link.href = url
-        link.download = 'mnemo-tarjetas.json'
+        link.download = `${APP_NAME.toLowerCase()}-tarjetas.json`
         link.click()
         setTimeout(() => URL.revokeObjectURL(url), 1000)
         ui.toast('Tarjetas exportadas')

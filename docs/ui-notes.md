@@ -8,7 +8,7 @@ The pasted text is the task request. `Facet.pdf` is treated as a visual referenc
 
 ## Assumptions
 
-- **Mnemo** is the intended app name because it appears in the PDF. `src/shared/app.ts` defines `APP_NAME`, used by the renderer, native window title and packaging script. The package ID and existing user-data location are retained to protect saved profiles.
+- **Facet** is the app name, as explicitly chosen by the user. The supplied PDF retains its Mnemo reference wordmark. `src/shared/app.ts` defines `APP_NAME`, used by the renderer, native window title, export filenames and packaging script. The package ID, storage keys and existing user-data location are retained to protect saved profiles.
 - The PDF embeds unnamed Type 3 glyphs. An exact font family cannot be recovered from its metadata; bundled Inter is the chosen close sans-serif substitute. The 80-ish cover wordmark size is not used as an application heading.
 - Dark grayscale colors, fine dividers and a restrained corner radius come from the cover. Light colors, semantic count tints, component dimensions and responsive breakpoints are derived because their design frames were not supplied. All component colors and dimensions are CSS tokens; media-query breakpoints are explicit CSS constants.
 - No command palette is implemented: the brief requests one only if it exists in Figma, and the supplied reference does not establish one. `A`, `⌘/Ctrl+F`, `⌘/Ctrl+Enter` and the reviewer shortcuts are implemented.

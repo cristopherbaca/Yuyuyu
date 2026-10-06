@@ -1,1 +1,1 @@
-export const APP_NAME = 'Mnemo'
+export const APP_NAME = 'Facet'

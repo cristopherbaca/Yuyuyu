@@ -2,6 +2,7 @@ import { ipcMain, shell, dialog, type BrowserWindow } from 'electron'
 import { writeFile } from 'node:fs/promises'
 import { z } from 'zod'
 import { externalUrlSchema, exportSchema, type Result } from '../../shared/ipc'
+import { APP_NAME } from '../../shared/app'
 export function registerDesktopIpc(getWindow: () => BrowserWindow | null) {
   function register<T, R>(
     channel: string,
@@ -48,7 +49,7 @@ export function registerDesktopIpc(getWindow: () => BrowserWindow | null) {
   })
   register('desktop:exportJson', exportSchema, async (json, window) => {
     const result = await dialog.showSaveDialog(window, {
-      defaultPath: 'dynamic-flashcards-demo.json',
+      defaultPath: `${APP_NAME.toLowerCase()}-tarjetas.json`,
       filters: [{ name: 'JSON', extensions: ['json'] }],
     })
     if (result.canceled || !result.filePath) return { canceled: true }
