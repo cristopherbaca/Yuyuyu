@@ -1,7 +1,7 @@
 {
   "name": "dynamic-flashcards",
   "version": "0.1.0",
-  "description": "Local-first verified dynamic flashcards with FSRS",
+  "description": "Dynamic Flashcards desktop frontend demo with light and dark themes",
   "author": "Dynamic Flashcards",
   "license": "MIT",
   "type": "module",
@@ -13,21 +13,13 @@
     "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && electron-vite build",
     "dist": "npm run build && node scripts/dist.ts",
-    "rebuild": "node scripts/rebuild.ts",
-    "postinstall": "npm run rebuild",
     "test:electron": "node scripts/smoke.ts",
     "format": "prettier --write src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
-    "format:check": "prettier --check src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md"
+    "format:check": "prettier --check src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
+    "postinstall": "install-electron --no"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
-    "dotenv": "^18.0.5",
-    "drizzle-orm": "^0.45.3",
-    "fastest-levenshtein": "^1.0.16",
     "katex": "^0.19.0",
-    "mathjs": "^15.2.0",
-    "openai": "^7.28.0",
-    "p-limit": "^7.3.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-markdown": "^10.1.0",
@@ -35,13 +27,10 @@
     "rehype-katex": "^7.0.1",
     "rehype-sanitize": "^6.0.0",
     "remark-math": "^6.0.0",
-    "ts-fsrs": "^5.4.2",
-    "undici": "^8.11.2",
     "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

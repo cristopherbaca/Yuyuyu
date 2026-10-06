@@ -1,17 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
+import { useTheme } from './theme'
 import { HashRouter, Navigate, NavLink, Route, Routes, useLocation } from 'react-router'
-import type { LlmStatus } from '../../shared/domain'
 import { ConceptsPage, ConceptDetailPage } from './Concepts'
 import { StudyPage } from './Study'
 import { StatsPage } from './Stats'
 import { SettingsPage } from './Settings'
 import { Icon } from './components'
-const statusLabels = {
-  idle: 'Banco listo',
-  generating: 'Generando variantes…',
-  offline: 'Sin conexión · banco local',
-  'no-key': 'Configura clave y modelos',
-}
 function ScrollReset() {
   const location = useLocation()
   useEffect(() => {
@@ -20,23 +14,7 @@ function ScrollReset() {
   return null
 }
 export function App() {
-  const [status, setStatus] = useState<LlmStatus>('idle')
-  const [fake, setFake] = useState(false)
-  useEffect(() => {
-    const unsubscribe = window.api.onLlmStatus((value) => setStatus(value))
-    // settings.get emits current status. Avoid requesting it inside the event listener (feedback loop).
-    void window.api.settings.get().then((result) => {
-      if (result.ok) {
-        setFake(result.data.fakeLlm)
-        if (
-          !result.data.fakeLlm &&
-          (!result.data.apiKeySet || !result.data.modelGenerate || !result.data.modelVerify)
-        )
-          setStatus('no-key')
-      }
-    })
-    return unsubscribe
-  }, [])
+  const { theme, setTheme } = useTheme()
   return (
     <HashRouter>
       <ScrollReset />
@@ -78,16 +56,26 @@ export function App() {
               <br />
               El conocimiento se queda.
             </p>
-            <span className="version">v0.1 · FSRS</span>
+            <span className="version">v0.1 · Frontend</span>
           </div>
         </aside>
         <div className="main-shell">
           <div className="topbar">
             <span>Tu espacio de aprendizaje</span>
-            <span className={`status-chip status-${status}`}>
-              <i className="dot" />
-              {fake && status === 'idle' ? 'Simulación · sin conexión' : statusLabels[status]}
-            </span>
+            <div className="topbar-actions">
+              <span className="status-chip">
+                <i className="dot" />
+                Demo de interfaz
+              </span>
+              <button
+                className="theme-toggle"
+                aria-label={theme === 'light' ? 'Activar tema oscuro' : 'Activar tema claro'}
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+              >
+                <Icon name={theme === 'light' ? 'moon' : 'sun'} />
+                <span>{theme === 'light' ? 'Oscuro' : 'Claro'}</span>
+              </button>
+            </div>
           </div>
           <main>
             <Routes>

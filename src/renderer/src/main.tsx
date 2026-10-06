@@ -1,6 +1,7 @@
 import React, { Component, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
+import { ThemeProvider } from './theme'
 import './style.css'
 import 'katex/dist/katex.min.css'
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
@@ -23,7 +24,9 @@ class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <Boundary>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </Boundary>
   </React.StrictMode>,
 )

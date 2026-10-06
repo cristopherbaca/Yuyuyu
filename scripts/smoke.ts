@@ -1,17 +1,12 @@
 import { _electron as electron } from 'playwright'
-import { mkdtempSync, mkdirSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import assert from 'node:assert/strict'
 const userData = mkdtempSync(join(tmpdir(), 'dynamic-flashcards-smoke-'))
 const app = await electron.launch({
   args: ['out/main/index.js'],
-  env: {
-    ...process.env,
-    DYNAMIC_FLASHCARDS_USER_DATA: userData,
-    FAKE_LLM: 'true',
-    OPENAI_API_KEY: '',
-  },
+  env: { ...process.env, DYNAMIC_FLASHCARDS_USER_DATA: userData },
   timeout: 30000,
 })
 const errors: string[] = []
@@ -20,7 +15,6 @@ try {
   page.on('pageerror', (error) => errors.push(error.message))
   await page.getByRole('heading', { name: 'Ideas que se quedan.' }).waitFor()
   const security = await app.evaluate(({ BrowserWindow }) => {
-    // Electron exposes this runtime inspector without a public declaration.
     const contents = BrowserWindow.getAllWindows()[0].webContents as Electron.WebContents & {
       getLastWebPreferences(): {
         contextIsolation: boolean
@@ -37,61 +31,85 @@ try {
   })
   assert.deepEqual(security, { contextIsolation: true, nodeIntegration: false, sandbox: true })
   assert.equal(await page.evaluate(() => typeof Reflect.get(window, 'require')), 'undefined')
-  const secret = await page.evaluate(async () => {
-    const saved = await window.api.settings.setApiKey('local-smoke-secret')
-    const read = await window.api.settings.get()
-    return { saved, read }
-  })
-  assert.ok(secret.read.ok)
-  assert.equal(secret.read.data.apiKeySet, true)
-  assert.equal(JSON.stringify(secret).includes('local-smoke-secret'), false)
+  assert.equal(
+    await page.evaluate(() => typeof Reflect.get(window, 'api')),
+    'undefined',
+    'No backend IPC API remains',
+  )
+  const denied = await page.evaluate(() => window.desktop!.openExternal('file:///tmp/blocked'))
+  assert.equal(denied.ok, false)
+  await page.getByRole('link', { name: 'Ajustes', exact: true }).click()
+  await page.getByRole('button', { name: 'Claro Suave y luminoso' }).click()
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light')
+  await page.getByRole('button', { name: 'Activar tema oscuro' }).click()
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark')
+  const darkBackground = await page.evaluate(
+    () => getComputedStyle(document.documentElement).backgroundColor,
+  )
+  await page.reload()
+  await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor()
+  assert.equal(
+    await page.locator('html').getAttribute('data-theme'),
+    'dark',
+    'Theme must survive reload',
+  )
+  assert.equal(await page.getByLabel('Nueva clave API').count(), 0)
+  await page.getByRole('link', { name: 'Conceptos', exact: true }).click()
   await page.getByRole('button', { name: 'Nuevo concepto', exact: true }).click()
   await page.getByLabel('Título', { exact: true }).fill('Teorema de Pitágoras')
   await page
     .getByLabel('Tu nota', { exact: true })
-    .fill(
-      'En un triángulo rectángulo, los catetos a y b y la hipotenusa c cumplen a² + b² = c². La fórmula es $c = \\sqrt{a^2+b^2}$.',
-    )
+    .fill('En un triángulo rectángulo se cumple $a^2 + b^2 = c^2$.')
   await page.getByRole('button', { name: 'Guardar concepto', exact: true }).click()
   await page.getByRole('heading', { name: 'Teorema de Pitágoras', exact: true }).waitFor()
   await page.locator('.katex').first().waitFor()
-  await page.waitForFunction(async () => {
-    const result = await window.api.concepts.list()
-    return result.ok && result.data[0]?.poolSize === 5
-  })
-  const before = await page.evaluate(async () => {
-    const result = await window.api.concepts.list()
-    if (!result.ok || !result.data[0]) throw new Error('Missing concept')
-    return result.data[0].due
-  })
-  await page.getByRole('link', { name: 'Estudiar', exact: true }).click()
+  await page.getByRole('link', { name: /Repasar concepto/ }).click()
   await page.getByRole('button', { name: /Empezar a estudiar/ }).click()
   await page.getByRole('button', { name: /Mostrar respuesta/ }).waitFor()
   await page.keyboard.press('Space')
   await page.getByRole('button', { name: 'Bien 3' }).waitFor()
   await page.keyboard.press('3')
-  await page.getByText('Próximo repaso', { exact: true }).waitFor()
-  const after = await page.evaluate(async () => {
-    const result = await window.api.concepts.list()
-    if (!result.ok || !result.data[0]) throw new Error('Missing concept')
-    return result.data[0].due
-  })
-  assert.ok(after > before, 'FSRS must move due after a Good review')
-  await page.getByRole('button', { name: 'No estoy de acuerdo', exact: true }).click()
-  await page.getByRole('button', { name: 'Incorrecta', exact: true }).click()
-  await page.getByText('Valoración corregida por ti.', { exact: true }).waitFor()
-  await page.getByRole('button', { name: 'Reportar error', exact: true }).click()
-  await page.getByText(/Reporte guardado/).waitFor()
-  await page.getByRole('button', { name: 'Reportar error', exact: true }).click()
-  await page.getByText(/Variante retirada/).waitFor()
+  await page.getByText('Práctica registrada', { exact: true }).waitFor()
+  await page.getByRole('button', { name: /Terminar sesión/ }).click()
+  await page.getByRole('heading', { name: 'Sesión completada.' }).waitFor()
   await page.getByRole('link', { name: 'Estadísticas', exact: true }).click()
   await page.getByRole('heading', { name: 'Tu progreso', exact: true }).waitFor()
-  await page.getByText('Solución independiente', { exact: true }).waitFor()
-  assert.deepEqual(errors, [])
+  assert.equal(
+    await page.locator('.stats-cards .panel').nth(1).locator('strong').textContent(),
+    '1',
+  )
   mkdirSync('.onboarding', { recursive: true })
-  await page.screenshot({ path: resolve('.onboarding/stats-smoke.png'), fullPage: true })
+  await page.screenshot({
+    path: resolve('.onboarding/dark-theme.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.getByRole('button', { name: 'Activar tema claro' }).click()
+  assert.notEqual(
+    await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor),
+    darkBackground,
+  )
+  await page.screenshot({
+    path: resolve('.onboarding/light-theme.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
+  await page.reload()
+  await page.getByRole('heading', { name: 'Tu progreso', exact: true }).waitFor()
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light')
+  assert.equal(
+    await page.locator('.stats-cards .panel').nth(1).locator('strong').textContent(),
+    '1',
+    'Demo activity must survive reload',
+  )
+  assert.equal(
+    readdirSync(userData).some((file) => /flashcards\.db|api-key|settings\.json/.test(file)),
+    false,
+    'No backend files created',
+  )
+  assert.deepEqual(errors, [])
   console.log(
-    'Electron smoke passed: secure preload, write-only key, concept creation, verified pool, KaTeX, keyboard review, FSRS due, override, reporting and usage statistics.',
+    'Electron smoke passed: secure shell, no backend API/files, both themes and persistence, note creation, KaTeX, keyboard practice and demo activity.',
   )
 } finally {
   await app.close()

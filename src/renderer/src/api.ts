@@ -1,8 +1,7 @@
-import type { Api } from '../../shared/ipc'
-import type { Result } from '../../shared/domain'
+import type { DesktopApi, Result } from '../../shared/ipc'
 declare global {
   interface Window {
-    api: Api
+    desktop?: DesktopApi
   }
 }
 export async function unwrap<T>(promise: Promise<Result<T>>): Promise<T> {

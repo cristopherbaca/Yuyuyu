@@ -1,9 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize'
-import { message } from './api'
 const sanitize = {
   ...defaultSchema,
   attributes: {
@@ -30,7 +29,7 @@ export function Markdown({ text }: { text: string }) {
               href={href?.startsWith('https:') ? href : undefined}
               onClick={(event) => {
                 event.preventDefault()
-                if (href?.startsWith('https:')) void window.api.openExternal(href)
+                if (href?.startsWith('https:')) void window.desktop?.openExternal(href)
               }}
             >
               {children}
@@ -80,37 +79,14 @@ export function PageHeader({
     </header>
   )
 }
-export function useResource<T>(load: () => Promise<T>, dependencies: readonly unknown[] = []) {
-  const [data, setData] = useState<T | null>(null)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [revision, setRevision] = useState(0)
-  useEffect(() => {
-    let alive = true
-    setLoading(true)
-    setError('')
-    load()
-      .then((value) => {
-        if (alive) setData(value)
-      })
-      .catch((error) => {
-        if (alive) setError(message(error))
-      })
-      .finally(() => {
-        if (alive) setLoading(false)
-      })
-    return () => {
-      alive = false
-    }
-  }, [...dependencies, revision]) // Callers provide the resource identity as dependencies.
-  return { data, error, loading, reload: () => setRevision((value) => value + 1) }
-}
 export function Icon({
   name,
 }: {
-  name: 'cards' | 'study' | 'stats' | 'settings' | 'arrow' | 'plus' | 'spark'
+  name: 'cards' | 'study' | 'stats' | 'settings' | 'arrow' | 'plus' | 'spark' | 'moon' | 'sun'
 }) {
   const paths = {
+    moon: 'M20.9 13.1A9 9 0 0 1 10.9 3.1 9 9 0 1 0 20.9 13.1Z',
+    sun: 'M12 3V1m0 22v-2M3 12H1m22 0h-2M4.2 4.2 2.8 2.8m18.4 18.4-1.4-1.4M4.2 19.8l-1.4 1.4M21.2 2.8l-1.4 1.4M17 12a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z',
     cards:
       'M7 3h10a2 2 0 0 1 2 2v12M5 7h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z',
     study: 'm9 5 10 7-10 7V5Z',

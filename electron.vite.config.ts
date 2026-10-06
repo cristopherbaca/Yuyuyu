@@ -6,7 +6,6 @@ const nonce = randomBytes(18).toString('base64')
 export default defineConfig({
   main: {
     plugins: [externalizeDepsPlugin()],
-    build: { rollupOptions: { external: ['better-sqlite3'] } },
   },
   preload: {
     plugins: [externalizeDepsPlugin({ exclude: ['zod'] })],

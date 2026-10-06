@@ -1,54 +1,33 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
-import type { Mode } from '../../shared/domain'
-import { date, message, unwrap } from './api'
-import { ErrorBox, Icon, Markdown, Notice, PageHeader, useResource } from './components'
+import type { Mode } from './demo'
+import { demo, useDemo } from './store'
+import { date, message } from './api'
+import { ErrorBox, Icon, Markdown, Notice, PageHeader } from './components'
 const labels = { simple: 'Simple', problem: 'Problemas', both: 'Ambas' }
 export function ConceptsPage() {
-  const resource = useResource(() => unwrap(window.api.concepts.list()))
+  const { concepts } = useDemo()
   const [creating, setCreating] = useState(false)
-  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [title, setTitle] = useState('')
   const [note, setNote] = useState('')
   const [mode, setMode] = useState<Mode>('both')
   const navigate = useNavigate()
-  useEffect(() => window.api.onPoolUpdated(() => resource.reload()), [])
-  async function create(event: FormEvent) {
+  function create(event: FormEvent) {
     event.preventDefault()
-    setBusy(true)
-    setError('')
     try {
-      const concept = await unwrap(
-        window.api.concepts.create({ title, noteText: note, modePref: mode }),
-      )
+      const concept = demo.create({ title, noteText: note, modePref: mode })
       navigate(`/concepts/${concept.id}`)
     } catch (error) {
       setError(message(error))
-    } finally {
-      setBusy(false)
     }
   }
-  async function seed() {
-    setBusy(true)
-    setError('')
-    try {
-      await unwrap(window.api.data.seed())
-      resource.reload()
-    } catch (error) {
-      setError(message(error))
-    } finally {
-      setBusy(false)
-    }
-  }
-  const all = resource.data ?? []
-  const due = all.filter((c) => c.due <= Date.now()).length
   return (
     <>
       <PageHeader
         eyebrow="TU BIBLIOTECA"
         title="Ideas que se quedan."
-        description="Escribe una vez. Descubre una nueva perspectiva en cada repaso."
+        description="Organiza tus notas y prueba tu espacio de aprendizaje."
         action={
           <button className="primary" onClick={() => setCreating(!creating)}>
             <Icon name="plus" />
@@ -56,11 +35,12 @@ export function ConceptsPage() {
           </button>
         }
       />
-      <ErrorBox error={error || resource.error} />
+      <ErrorBox error={error} />
+      {demo.getWarning() && <Notice>{demo.getWarning()}</Notice>}
       {creating && (
         <form className="panel concept-form" onSubmit={create}>
           <div className="section-title">
-            <h2>Un concepto, muchas maneras de aprender.</h2>
+            <h2>Todo empieza con una idea.</h2>
             <span className="badge">Markdown + LaTeX</span>
           </div>
           <label>
@@ -81,7 +61,7 @@ export function ConceptsPage() {
                 onChange={(e) => setNote(e.target.value)}
                 rows={8}
                 maxLength={40000}
-                placeholder="Incluye los hechos, las fórmulas y los ejemplos que quieres aprender. Las variantes usarán solo esta nota."
+                placeholder="Escribe los hechos, las fórmulas y los ejemplos que quieres aprender."
                 required
               />
             </label>
@@ -95,69 +75,50 @@ export function ConceptsPage() {
           <label>
             Tipo de práctica
             <select value={mode} onChange={(e) => setMode(e.target.value as Mode)}>
-              <option value="simple">Simple · recordar y completar</option>
-              <option value="problem">Problemas · aplicar conceptos</option>
-              <option value="both">Ambas · variedad completa</option>
+              <option value="simple">Simple</option>
+              <option value="problem">Problemas</option>
+              <option value="both">Ambas</option>
             </select>
+            <small>Preferencia para la futura generación de variantes.</small>
           </label>
-          <button className="primary" disabled={busy}>
-            {busy ? 'Guardando…' : 'Guardar concepto'}
-          </button>
+          <button className="primary">Guardar concepto</button>
         </form>
       )}
       <div className="summary-strip">
         <span>
-          <strong>{all.length}</strong> conceptos
+          <strong>{concepts.length}</strong> conceptos
         </span>
         <span>
-          <i className="dot amber" />
-          <strong>{due}</strong> para repasar
+          <i className="dot" /> Guardados en este dispositivo
         </span>
-        <span>
-          <i className="dot" />
-          <strong>{all.reduce((n, c) => n + c.poolSize, 0)}</strong> variantes listas
-        </span>
-        <span className="muted">Tu conocimiento, en tu dispositivo.</span>
+        <span className="muted">Vista de demostración</span>
       </div>
-      {resource.loading && !resource.data ? (
-        <Notice>Cargando tus conceptos…</Notice>
-      ) : !all.length ? (
+      {!concepts.length ? (
         <div className="empty panel">
           <div className="empty-icon">
             <Icon name="cards" />
           </div>
-          <h2>Todo empieza con una idea.</h2>
-          <p>
-            Añade tu primera nota o explora tres conceptos de ejemplo.
-            <br />
-            Los repasos funcionan incluso sin conexión.
-          </p>
+          <h2>Tu próxima idea vive aquí.</h2>
+          <p>Añade tu primera nota o explora tres conceptos de ejemplo.</p>
           <button className="primary" onClick={() => setCreating(true)}>
             Crear mi primer concepto
           </button>
-          <button className="text-button" onClick={() => void seed()} disabled={busy}>
+          <button className="text-button" onClick={() => demo.seed()}>
             Cargar datos de ejemplo <span>↗</span>
           </button>
         </div>
       ) : (
         <div className="concept-grid">
-          {all.map((c) => (
+          {concepts.map((c) => (
             <Link className="concept-card" to={`/concepts/${c.id}`} key={c.id}>
               <div className="card-top">
                 <span className="badge">{labels[c.modePref]}</span>
-                <span className={`due-badge ${c.due <= Date.now() ? 'is-due' : ''}`}>
-                  {c.lastReview === null
-                    ? 'Nuevo'
-                    : c.due <= Date.now()
-                      ? 'Para hoy'
-                      : 'Programado'}
-                </span>
+                <span className="due-badge">Nota local</span>
               </div>
               <h2>{c.title}</h2>
               <p className="note-excerpt">{c.noteText.replace(/[#*$]/g, '').slice(0, 150)}</p>
               <div className="card-footer">
-                <span>{c.poolSize} variantes listas</span>
-                <span>{Math.round(c.retrievability * 100)}% recuerdo</span>
+                <span>Explorar concepto</span>
                 <Icon name="arrow" />
               </div>
             </Link>
@@ -169,93 +130,64 @@ export function ConceptsPage() {
 }
 export function ConceptDetailPage() {
   const { id = '' } = useParams()
+  const { concepts, reviews } = useDemo()
+  const concept = concepts.find((c) => c.id === id)
+  const history = reviews
+    .filter((r) => r.conceptId === id)
+    .slice()
+    .reverse()
+    .slice(0, 10)
   const navigate = useNavigate()
-  const resource = useResource(() => unwrap(window.api.concepts.get(id)), [id])
-  const concepts = useResource(() => unwrap(window.api.concepts.list()))
   const [edit, setEdit] = useState(false)
   const [note, setNote] = useState('')
   const [mode, setMode] = useState<Mode>('both')
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  useEffect(
-    () =>
-      window.api.onPoolUpdated((changed) => {
-        if (changed === id) resource.reload()
-      }),
-    [id],
-  )
-  async function run(action: () => Promise<unknown>) {
-    setBusy(true)
-    setError('')
-    try {
-      await action()
-      resource.reload()
-    } catch (error) {
-      setError(message(error))
-    } finally {
-      setBusy(false)
-    }
-  }
-  if (!resource.data)
+  if (!concept)
     return (
       <>
-        <ErrorBox error={resource.error} />
-        <Notice>{resource.loading ? 'Cargando concepto…' : 'No se encontró el concepto.'}</Notice>
+        <Notice>No se encontró el concepto.</Notice>
+        <Link to="/concepts">Volver a conceptos</Link>
       </>
     )
-  const { concept: c, edges, reviews, pool } = resource.data
-  const name = (conceptId: string) =>
-    concepts.data?.find((c) => c.id === conceptId)?.title ?? 'Concepto'
   return (
     <>
       <Link className="back-link" to="/concepts">
         ← Todos los conceptos
       </Link>
       <PageHeader
-        eyebrow={labels[c.modePref].toUpperCase()}
-        title={c.title}
+        eyebrow={labels[concept.modePref].toUpperCase()}
+        title={concept.title}
         action={
           <button
             onClick={() => {
               setEdit(!edit)
-              setNote(c.noteText)
-              setMode(c.modePref)
+              setNote(concept.noteText)
+              setMode(concept.modePref)
             }}
           >
             {edit ? 'Cancelar' : 'Editar nota'}
           </button>
         }
       />
-      <ErrorBox error={error || resource.error} />
-      <div className="detail-metrics">
-        <div className="panel">
-          <span>Próximo repaso</span>
-          <strong>{c.lastReview ? date(c.due) : 'Listo para empezar'}</strong>
-        </div>
-        <div className="panel">
-          <span>Recuerdo estimado</span>
-          <strong>{Math.round(c.retrievability * 100)}%</strong>
-        </div>
-        <div className="panel">
-          <span>Banco verificado</span>
-          <strong>{pool.verified} variantes listas</strong>
-        </div>
-      </div>
+      <ErrorBox error={error} />
+      {demo.getWarning() && <Notice>{demo.getWarning()}</Notice>}
       <div className="detail-columns">
         <section className="panel">
           <div className="section-title">
             <h2>La nota original</h2>
-            <span className="badge">Fuente de verdad</span>
+            <span className="badge">Tu conocimiento</span>
           </div>
           {edit ? (
             <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                void run(async () => {
-                  await unwrap(window.api.concepts.update(id, { noteText: note, modePref: mode }))
+              onSubmit={(event) => {
+                event.preventDefault()
+                try {
+                  demo.update(id, { title: concept.title, noteText: note, modePref: mode })
                   setEdit(false)
-                })
+                } catch (error) {
+                  setError(message(error))
+                }
               }}
             >
               <label>
@@ -278,118 +210,60 @@ export function ConceptDetailPage() {
                   ))}
                 </select>
               </label>
-              <Notice>
-                Al guardar, las variantes anteriores se retiran y se genera un banco nuevo.
-              </Notice>
-              <button className="primary" disabled={busy}>
-                Guardar cambios
-              </button>
+              <button className="primary">Guardar cambios</button>
             </form>
           ) : (
-            <Markdown text={c.noteText} />
+            <Markdown text={concept.noteText} />
           )}
         </section>
         <aside>
           <section className="panel">
-            <div className="section-title">
-              <h2>Conexiones</h2>
-              <Icon name="cards" />
-            </div>
-            {edges.length ? (
-              edges.map((edge) => (
-                <div className="edge" key={edge.id}>
-                  <strong>
-                    {name(edge.fromId)} → {name(edge.toId)}
-                  </strong>
-                  <span className="muted">
-                    {edge.relation === 'prerequisite_of'
-                      ? 'Prerrequisito'
-                      : edge.relation === 'application_of'
-                        ? 'Aplicación'
-                        : 'Relacionado'}{' '}
-                    ·{' '}
-                    {edge.status === 'confirmed'
-                      ? 'Confirmada'
-                      : edge.status === 'rejected'
-                        ? 'Rechazada'
-                        : 'Sugerida'}
-                  </span>
-                  <p>{edge.rationale}</p>
-                  {edge.status === 'suggested' && (
-                    <div className="button-row">
-                      <button
-                        disabled={busy}
-                        onClick={() => void run(() => unwrap(window.api.edges.confirm(edge.id)))}
-                      >
-                        Confirmar
-                      </button>
-                      <button
-                        className="text-button"
-                        disabled={busy}
-                        onClick={() => void run(() => unwrap(window.api.edges.reject(edge.id)))}
-                      >
-                        Rechazar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="muted">
-                Las conexiones sugeridas aparecerán aquí. Solo las confirmadas generan refuerzos.
-              </p>
-            )}
+            <h2>Practica esta idea</h2>
+            <p className="muted">Recuerda el concepto y contrasta tu respuesta con tu nota.</p>
+            <Link className="button-link primary" to={`/study?concept=${id}`}>
+              Repasar concepto <Icon name="arrow" />
+            </Link>
           </section>
           <section className="panel">
-            <h2>Tu banco de variantes</h2>
-            <p>
-              {pool.verified} verificadas · {pool.rejected} rechazadas · {pool.retired} retiradas
+            <h2>Más perspectivas, pronto.</h2>
+            <p className="muted">
+              La generación de variantes, las conexiones y la programación de repasos estarán
+              disponibles cuando se conecte el backend.
             </p>
-            <button
-              disabled={busy}
-              onClick={() => void run(() => unwrap(window.api.concepts.generate(id, 5)))}
-            >
-              <Icon name="spark" /> Generar 5 variantes
-            </button>
-            {c.nextAngleHint && <Notice>Próximo enfoque: {c.nextAngleHint}</Notice>}
+            <span className="badge">Demo de interfaz</span>
           </section>
         </aside>
       </div>
       <section className="panel">
-        <h2>Repasos recientes</h2>
-        {reviews.length ? (
-          reviews.map((r) => (
+        <h2>Prácticas recientes</h2>
+        {history.length ? (
+          history.map((r) => (
             <div className="review-history" key={r.id}>
-              <span className={`verdict ${r.verdict}`}>
-                {r.verdict === 'pass' ? 'Bien' : r.verdict === 'partial' ? 'Parcial' : 'Otra vez'}
+              <span
+                className={`verdict ${r.rating === 1 ? 'fail' : r.rating === 2 ? 'partial' : 'pass'}`}
+              >
+                {['Otra vez', 'Difícil', 'Bien', 'Fácil'][r.rating - 1]}
               </span>
               <div>
                 <strong>{date(r.reviewedAt)}</strong>
-                <p>
-                  {r.errorSummary ?? r.graderReasoning}
-                  {r.userOverrideVerdict ? ' · Valoración corregida' : ''}
-                </p>
+                <p>Autoevaluación de demostración</p>
               </div>
-              <span className="badge">FSRS {r.rating}</span>
             </div>
           ))
         ) : (
-          <p className="muted">Todavía no has repasado este concepto.</p>
+          <p className="muted">Todavía no has practicado este concepto.</p>
         )}
       </section>
       <div className="delete-row">
         {confirmDelete ? (
           <>
-            <span>¿Eliminar este concepto y su historial?</span>
+            <span>¿Eliminar este concepto y su historial de demo?</span>
             <button
               className="danger"
-              disabled={busy}
-              onClick={() =>
-                void run(async () => {
-                  await unwrap(window.api.concepts.delete(id))
-                  navigate('/concepts')
-                })
-              }
+              onClick={() => {
+                demo.delete(id)
+                navigate('/concepts')
+              }}
             >
               Sí, eliminar
             </button>

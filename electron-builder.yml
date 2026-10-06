@@ -3,8 +3,6 @@ productName: Dynamic Flashcards
 files:
   - out/**
   - package.json
-asarUnpack:
-  - node_modules/better-sqlite3/**
 directories:
   output: dist
 linux:
@@ -19,5 +17,3 @@ mac:
   identity: null
 win:
   target: nsis
-npmRebuild: true
-beforeBuild: scripts/native.cjs
