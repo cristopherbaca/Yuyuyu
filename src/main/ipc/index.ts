@@ -29,6 +29,19 @@ export function registerDesktopIpc(getWindow: () => BrowserWindow | null) {
       }
     })
   }
+  register('desktop:minimize', z.null(), async (_input, window) => {
+    window.minimize()
+    return null
+  })
+  register('desktop:toggleMaximize', z.null(), async (_input, window) => {
+    if (window.isMaximized()) window.unmaximize()
+    else window.maximize()
+    return null
+  })
+  register('desktop:close', z.null(), async (_input, window) => {
+    window.close()
+    return null
+  })
   register('desktop:openExternal', externalUrlSchema, async (url) => {
     await shell.openExternal(url)
     return null

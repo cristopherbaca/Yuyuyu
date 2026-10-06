@@ -14,9 +14,11 @@
     "build": "npm run typecheck && electron-vite build",
     "dist": "npm run build && node scripts/dist.ts",
     "test:electron": "node scripts/smoke.ts",
-    "format": "prettier --write src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
-    "format:check": "prettier --check src tests scripts electron.vite.config.ts vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
-    "postinstall": "install-electron --no"
+    "format": "prettier --write src tests scripts vite.browser.config.ts electron.vite.config.ts docs vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
+    "format:check": "prettier --check src tests scripts vite.browser.config.ts electron.vite.config.ts docs vitest.config.ts package.json tsconfig.json electron-builder.yml README.md",
+    "postinstall": "install-electron --no",
+    "dev:ui": "vite --config vite.browser.config.ts",
+    "test:ui": "node scripts/ui-qa.ts"
   },
   "dependencies": {
     "@fontsource/inter": "^5.3.0",

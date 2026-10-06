@@ -1,4 +1,5 @@
-import { BrowserWindow, screen } from 'electron'
+import { APP_NAME } from '../../shared/app'
+import { BrowserWindow, screen, nativeTheme } from 'electron'
 import { join } from 'node:path'
 import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { z } from 'zod'
@@ -39,8 +40,12 @@ export function createWindow(userData: string) {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    backgroundColor: '#f5f4ef',
-    title: 'Dynamic Flashcards',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0b0b0c' : '#fafafa',
+    title: APP_NAME,
+    titleBarStyle: 'hidden',
+    ...(process.platform === 'darwin'
+      ? { trafficLightPosition: { x: 16, y: 12 } }
+      : { frame: false }),
     webPreferences: {
       preload: join(import.meta.dirname, '../preload/index.cjs'),
       contextIsolation: true,

@@ -18,6 +18,10 @@ export const exportSchema = z
   }, 'JSON inválido')
 // Only desktop capabilities cross IPC. Demo data stays entirely in the renderer.
 export interface DesktopApi {
+  platform: string
+  minimize(): Promise<Result<null>>
+  toggleMaximize(): Promise<Result<null>>
+  close(): Promise<Result<null>>
   openExternal(url: string): Promise<Result<null>>
   exportJson(json: string): Promise<Result<{ canceled: boolean }>>
 }

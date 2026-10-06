@@ -3,7 +3,7 @@ import { mkdtempSync, mkdirSync, rmSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import assert from 'node:assert/strict'
-const userData = mkdtempSync(join(tmpdir(), 'dynamic-flashcards-smoke-'))
+const userData = mkdtempSync(join(tmpdir(), 'mnemo-smoke-'))
 const app = await electron.launch({
   args: ['out/main/index.js'],
   env: { ...process.env, DYNAMIC_FLASHCARDS_USER_DATA: userData },
@@ -13,7 +13,7 @@ const errors: string[] = []
 try {
   const page = await app.firstWindow()
   page.on('pageerror', (error) => errors.push(error.message))
-  await page.getByRole('heading', { name: 'Ideas que se quedan.' }).waitFor()
+  await page.getByRole('heading', { name: 'Mazos', exact: true }).waitFor()
   const security = await app.evaluate(({ BrowserWindow }) => {
     const contents = BrowserWindow.getAllWindows()[0].webContents as Electron.WebContents & {
       getLastWebPreferences(): {
@@ -34,82 +34,71 @@ try {
   assert.equal(
     await page.evaluate(() => typeof Reflect.get(window, 'api')),
     'undefined',
-    'No backend IPC API remains',
+    'Mock API must not ship in production',
   )
-  const denied = await page.evaluate(() => window.desktop!.openExternal('file:///tmp/blocked'))
-  assert.equal(denied.ok, false)
+  assert.equal(
+    (await page.evaluate(() => window.desktop!.openExternal('file:///tmp/blocked'))).ok,
+    false,
+  )
+  await page.getByRole('button', { name: 'Crear mazo', exact: true }).first().click()
+  await page.getByLabel('Nombre del mazo', { exact: true }).fill('Mi primer mazo')
+  await page.getByRole('dialog').getByRole('button', { name: 'Crear mazo', exact: true }).click()
+  await page.getByRole('heading', { name: 'Mi primer mazo', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Añadir tarjeta', exact: true }).last().click()
+  await page.getByLabel('Frente', { exact: true }).fill('Teorema de Pitágoras')
+  await page
+    .getByLabel('Reverso', { exact: true })
+    .fill('En un triángulo rectángulo se cumple $a^2+b^2=c^2$.')
+  await page.keyboard.press('Control+Enter')
+  await page
+    .getByRole('status')
+    .filter({ hasText: /Tarjeta añadida/ })
+    .waitFor()
+  assert.equal(await page.getByLabel('Frente', { exact: true }).inputValue(), '')
+  await page.getByRole('button', { name: 'Cerrar', exact: true }).first().click()
+  await page.getByRole('button', { name: /Estudiar ahora/ }).click()
+  await page.getByRole('button', { name: /Mostrar respuesta/ }).waitFor()
+  await page.keyboard.press('n')
+  await page.getByRole('dialog', { name: 'De tu nota' }).waitFor()
+  await page.locator('.katex').first().waitFor()
+  await page.keyboard.press('Escape')
+  await page.keyboard.press('Space')
+  await page.getByRole('button', { name: 'Bien 3 Sin programar' }).waitFor()
+  await page.keyboard.press('3')
+  await page.getByRole('heading', { name: 'Repaso terminado' }).waitFor()
+  await page.getByRole('button', { name: 'Volver al mazo', exact: true }).click()
+  await page.keyboard.press('a')
+  await page.getByRole('dialog', { name: 'Añadir tarjeta' }).waitFor()
+  await page.keyboard.press('Escape')
   await page.getByRole('link', { name: 'Ajustes', exact: true }).click()
-  await page.getByRole('button', { name: 'Claro Suave y luminoso' }).click()
-  assert.equal(await page.locator('html').getAttribute('data-theme'), 'light')
-  await page.getByRole('button', { name: 'Activar tema oscuro' }).click()
+  await page.getByRole('button', { name: 'Oscuro', exact: true }).click()
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark')
-  const darkBackground = await page.evaluate(
-    () => getComputedStyle(document.documentElement).backgroundColor,
-  )
   await page.reload()
   await page.getByRole('heading', { name: 'Ajustes', exact: true }).waitFor()
-  assert.equal(
-    await page.locator('html').getAttribute('data-theme'),
-    'dark',
-    'Theme must survive reload',
-  )
-  assert.equal(await page.getByLabel('Nueva clave API').count(), 0)
-  await page.getByRole('link', { name: 'Conceptos', exact: true }).click()
-  await page.getByRole('button', { name: 'Nuevo concepto', exact: true }).click()
-  await page.getByLabel('Título', { exact: true }).fill('Teorema de Pitágoras')
-  await page
-    .getByLabel('Tu nota', { exact: true })
-    .fill('En un triángulo rectángulo se cumple $a^2 + b^2 = c^2$.')
-  await page.getByRole('button', { name: 'Guardar concepto', exact: true }).click()
-  await page.getByRole('heading', { name: 'Teorema de Pitágoras', exact: true }).waitFor()
-  await page.locator('.katex').first().waitFor()
-  await page.getByRole('link', { name: /Repasar concepto/ }).click()
-  await page.getByRole('button', { name: /Empezar a estudiar/ }).click()
-  await page.getByRole('button', { name: /Mostrar respuesta/ }).waitFor()
-  await page.keyboard.press('Space')
-  await page.getByRole('button', { name: 'Bien 3' }).waitFor()
-  await page.keyboard.press('3')
-  await page.getByText('Práctica registrada', { exact: true }).waitFor()
-  await page.getByRole('button', { name: /Terminar sesión/ }).click()
-  await page.getByRole('heading', { name: 'Sesión completada.' }).waitFor()
-  await page.getByRole('link', { name: 'Estadísticas', exact: true }).click()
-  await page.getByRole('heading', { name: 'Tu progreso', exact: true }).waitFor()
-  assert.equal(
-    await page.locator('.stats-cards .panel').nth(1).locator('strong').textContent(),
-    '1',
-  )
-  mkdirSync('.onboarding', { recursive: true })
-  await page.screenshot({
-    path: resolve('.onboarding/dark-theme.png'),
-    fullPage: true,
-    animations: 'disabled',
-  })
-  await page.getByRole('button', { name: 'Activar tema claro' }).click()
-  assert.notEqual(
-    await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor),
-    darkBackground,
-  )
-  await page.screenshot({
-    path: resolve('.onboarding/light-theme.png'),
-    fullPage: true,
-    animations: 'disabled',
-  })
-  await page.reload()
-  await page.getByRole('heading', { name: 'Tu progreso', exact: true }).waitFor()
+  assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark')
+  await page.getByRole('button', { name: 'Claro', exact: true }).click()
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'light')
-  assert.equal(
-    await page.locator('.stats-cards .panel').nth(1).locator('strong').textContent(),
-    '1',
-    'Demo activity must survive reload',
-  )
+  await page.getByRole('link', { name: 'Explorar', exact: true }).click()
+  await page.getByRole('button', { name: /Teorema de Pitágoras/ }).click()
+  await page.getByRole('dialog', { name: 'Detalle de tarjeta' }).waitFor()
+  await page.getByText('Bien', { exact: true }).waitFor()
+  await page.keyboard.press('Escape')
+  await page.getByRole('link', { name: 'Estadísticas', exact: true }).click()
+  await page.getByRole('heading', { name: 'Estadísticas', exact: true }).waitFor()
+  assert.equal(await page.locator('.stat-tiles>div').nth(1).locator('strong').textContent(), '1')
+  mkdirSync('docs/ui-qa', { recursive: true })
+  await page.screenshot({
+    path: resolve('docs/ui-qa/electron-local-light.png'),
+    fullPage: true,
+    animations: 'disabled',
+  })
   assert.equal(
     readdirSync(userData).some((file) => /flashcards\.db|api-key|settings\.json/.test(file)),
     false,
-    'No backend files created',
   )
   assert.deepEqual(errors, [])
   console.log(
-    'Electron smoke passed: secure shell, no backend API/files, both themes and persistence, note creation, KaTeX, keyboard practice and demo activity.',
+    'Electron smoke passed: secure custom shell, deck/card creation, batch editor, KaTeX source, keyboard reviewer, local activity, persistent themes and no mock/backend API.',
   )
 } finally {
   await app.close()

@@ -1,5 +1,4 @@
 appId: local.dynamicflashcards.desktop
-productName: Dynamic Flashcards
 files:
   - out/**
   - package.json
