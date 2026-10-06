@@ -1,0 +1,20 @@
+appId: local.dynamicflashcards.desktop
+productName: Dynamic Flashcards
+files:
+  - out/**
+  - package.json
+asarUnpack:
+  - node_modules/better-sqlite3/**
+directories:
+  output: dist
+linux:
+  target:
+    - AppImage
+    - deb
+  category: Education
+mac:
+  target: dmg
+  identity: null
+win:
+  target: nsis
+npmRebuild: true
