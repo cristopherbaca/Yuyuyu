@@ -23,7 +23,8 @@ describe('frontend demo data', () => {
     expect(restored.getSnapshot().reviews).toHaveLength(1)
     restored.delete(concept.id)
     expect(createDemoStore(storage).getSnapshot()).toEqual({
-      version: 1,
+      version: 2,
+      decks: restored.getSnapshot().decks,
       concepts: [],
       reviews: [],
     })
