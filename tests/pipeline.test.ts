@@ -1,24 +1,9 @@
+import { fixture } from './helpers'
 import { describe, expect, it } from 'vitest'
-import { randomUUID } from 'node:crypto'
-import { createDatabase } from '../src/main/db/client'
-import { concepts, variants } from '../src/main/db/schema'
+import { variants } from '../src/main/db/schema'
 import { FakeLlm } from '../src/main/llm/fake'
 import { groundingScore } from '../src/main/services/verification'
 import { GenerationService } from '../src/main/services/generation'
-import { FsrsService } from '../src/main/services/fsrs'
-import { settingsSchema } from '../src/shared/domain'
-export function fixture() {
-  const connection = createDatabase()
-  const clock = () => new Date('2026-10-05T10:00:00Z')
-  const fsrs = new FsrsService(() => 0.9, clock)
-  const settings = settingsSchema.parse({ fakeLlm: true })
-  function concept(title = 'Teorema de Pitágoras', noteText = 'En un triángulo rectángulo, los catetos a y b y la hipotenusa c cumplen a² + b² = c².', modePref: 'both' | 'simple' | 'problem' = 'both') {
-    const id = randomUUID()
-    connection.db.insert(concepts).values({ id, title, noteText, modePref, ...fsrs.columns(fsrs.create()), createdAt: clock().getTime() }).run()
-    return id
-  }
-  return { ...connection, clock, fsrs, settings, concept }
-}
 describe('verification gate', () => {
   it('accepts real and fuzzy quotes, rejects fabricated grounding', () => {
     expect(groundingScore('los catetos a y b', 'Aquí los catetos a y b son conocidos.')).toBe(100)
